@@ -1,19 +1,28 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\NoteModule\NoteController;
+use App\Http\Controllers\KanbanModule\KanbanController;
+use App\Http\Controllers\ApiModule\ApiClientController;
 use Illuminate\Support\Facades\Route;
 
-// ROUTE 1: PUBLIC GATEKEEPER SECURITY REDIRECT
+
+// ZONE 1: PUBLIC GATEKEEPER PIPELINES
 Route::get('/', function () {
     return view('welcome');
 });
 
-
-// ROUTE 2: AUTHENTICATED SANDBOX LAUNCHPAD HUB
+// ZONE 2: CORE AUTHENTICATED CORE INTERFACES
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+    })->middleware(['auth', 'verified'])->name('dashboard');
 
+    Route::middleware(['auth', 'verified'])->group(function () {
+
+    // Profile Designer Modules Sandbox Sandbox Engine Routes
+    Route::get('/modules/profile-designer', [ApiClientController::class, 'profileDesignerIndex'])->name('profile.designer.index');
+    Route::post('/modules/profile-designer/generate', [ApiClientController::class, 'profileDesignerGenerate'])->name('profile.designer.generate');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -21,50 +30,45 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// =========================================================================
-// ZONE 3: FUTURE LEARNING MODULES REGISTRY PIPELINES
-// =========================================================================
-
-// 1st ADD = KANBAN
+// ZONE 3: AUTHENTICATED LEARNING MODULES & EXPERIMENTS LAB
 Route::middleware(['auth', 'verified'])->group(function () {
+
     // 📝 Note Sandbox Module Route Hooks
-    Route::get('/modules/notes', [App\Http\Controllers\NoteModule\NoteController::class, 'index'])->name('notes.index');
-    Route::post('/modules/notes', [App\Http\Controllers\NoteModule\NoteController::class, 'store'])->name('notes.store');
-    Route::delete('/modules/notes/{note}', [App\Http\Controllers\NoteModule\NoteController::class, 'destroy'])->name('notes.destroy');
+    Route::get('/modules/notes', [NoteController::class, 'index'])->name('notes.index');
+    Route::post('/modules/notes', [NoteController::class, 'store'])->name('notes.store');
+    Route::delete('/modules/notes/{note}', [NoteController::class, 'destroy'])->name('notes.destroy');
 
     // 📋 Kanban Board Sandbox Module Route Hooks
-    Route::get('/modules/kanban', [App\Http\Controllers\KanbanModule\KanbanController::class, 'index'])->name('kanban.index');
-    Route::post('/modules/kanban', [App\Http\Controllers\KanbanModule\KanbanController::class, 'store'])->name('kanban.store');
-    Route::patch('/modules/kanban/{task}/status', [App\Http\Controllers\KanbanModule\KanbanController::class, 'updateStatus'])->name('kanban.updateStatus');
-    Route::delete('/modules/kanban/{task}', [App\Http\Controllers\KanbanModule\KanbanController::class, 'destroy'])->name('kanban.destroy');
-});
+    Route::get('/modules/kanban', [KanbanController::class, 'index'])->name('kanban.index');
+    Route::post('/modules/kanban', [KanbanController::class, 'store'])->name('kanban.store');
+    Route::patch('/modules/kanban/{task}/status', [KanbanController::class, 'updateStatus'])->name('kanban.updateStatus');
+    Route::delete('/modules/kanban/{task}', [KanbanController::class, 'destroy'])->name('kanban.destroy');
 
+    // 📡 Live API Dashboard Hooks
+    Route::get('/modules/api', [ApiClientController::class, 'index'])->name('api.index');
+    Route::get('/modules/api-sandbox', [ApiClientController::class, 'index']);
+    Route::get('/modules/api/refresh-advice', [ApiClientController::class, 'refreshAdvice'])->name('api.refresh.advice');
+    Route::get('/modules/api/refresh-weather', [ApiClientController::class, 'refreshWeather'])->name('api.refresh.weather');
 
-    // 📡 Live API Client Sandbox Module Route Hooks
-    // Weather
-    Route::get('/modules/api', [App\Http\Controllers\ApiModule\ApiClientController::class, 'index'])->name('api.index');
-    Route::get('/modules/api-sandbox', [App\Http\Controllers\ApiModule\ApiClientController::class, 'index']);
-    
-    // 📡 Individual Card AJAX Hooks
-    Route::get('/modules/api/refresh-advice', [App\Http\Controllers\ApiModule\ApiClientController::class, 'refreshAdvice'])->name('api.refresh.advice');
-    Route::get('/modules/api/refresh-weather', [App\Http\Controllers\ApiModule\ApiClientController::class, 'refreshWeather'])->name('api.refresh.weather');
+    // 💵 Currency Exchange Matrix
+    Route::get('/modules/currency', [ApiClientController::class, 'currencyIndex'])->name('api.currency');
 
-
-    // Currency Exchange
-    Route::get('/modules/currency', [App\Http\Controllers\ApiModule\ApiClientController::class, 'currencyIndex'])->name('api.currency');
-
-    use App\Http\Controllers\ApiModule\ApiClientController;
-
-    // ✉️ Isolated Email Verification Sandbox Routes
+    // ✉️ Isolated Email Verification Engine Sandbox
     Route::get('/modules/email-verify', [ApiClientController::class, 'emailVerifyIndex'])->name('email.verify.index');
     Route::post('/modules/email-verify/send', [ApiClientController::class, 'sendVerificationEmail'])->name('email.verify.send');
     Route::get('/modules/email-verify/confirm/{email}', [ApiClientController::class, 'confirmVerification'])
         ->name('email.verify.confirm')
-        ->middleware('signed'); // 🔒 This ensures the URL cannot be manipulated
+        ->middleware('signed'); // 🔒 Cryptographic tampering gatekeeper
 
+    // 🎨 Profile Designer & QR Engine Laboratory
+    Route::get('/modules/profile-designer', [ApiClientController::class, 'profileDesignerIndex'])->name('profile.designer.index');
+    Route::post('/modules/profile-designer/generate', [ApiClientController::class, 'profileDesignerGenerate'])->name('profile.designer.generate');
+    
+    Route::get('/dashboard', [ApiClientController::class, 'dashboardIndex'])->name('dashboard');
 
+});
 
-
-// FOR LATER ADD
-
+// =========================================================================
+// ZONE 4: SYSTEM ENGINES
+// =========================================================================
 require __DIR__.'/auth.php';

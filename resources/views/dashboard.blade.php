@@ -48,6 +48,8 @@
             </a>
         </div>
 
+    </div> <!-- FIXED: This closes the top micro grid loop layout cleanly -->
+
     <!-- Active Laboratory Modules Board Grid -->
     <div class="mt-8">
         <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4 flex items-center gap-2">
@@ -107,8 +109,32 @@
                 </div>
             </div>
 
-        </div>
-    </div>
+        </div> <!-- Closes active laboratory modules board row grid -->
+    </div> <!-- Closes active laboratory modules board wrapper container -->
 
-</div>
+    <!-- Live Active Micro Preview Panel Zone Layout -->
+    <div class="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        <!-- Left/Center Multi-Span Column Container -->
+        <div class="lg:col-span-2 bg-white border border-gray-100 p-6 rounded-2xl shadow-sm">
+            <h3 class="font-bold text-slate-800 text-base">Workspace Statistics Summary</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Your isolated testing arrays are executing with 100% processing runtime efficiency metrics.</p>
+            <div class="mt-4 h-32 bg-slate-50 border border-dashed border-slate-200 rounded-xl flex items-center justify-center text-xs text-slate-400">
+                Data charts pipeline placeholder
+            </div>
+        </div>
+    
+        <!-- Right Balanced Sidebar Column Area -->
+        <div class="lg:col-span-1 space-y-3">
+            <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Active Profile Identity</h4>
+                <a href="{{ route('profile.designer.index') }}" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                    Edit Card ⚙️
+                </a>
+            </div>
+            
+            <x-profile_card_canvas :profile="$profile" />
+        </div>
+
+    </div>
 @endsection

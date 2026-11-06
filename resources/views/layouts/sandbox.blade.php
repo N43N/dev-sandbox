@@ -61,25 +61,35 @@
                     </a>
 
                     <!-- 📡 API Client Laboratory Link -->
-                    <a href="{{ route('api.index') }}" 
+                    <a href="{{ route('api.index') }}"
                     class="flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-all border border-transparent
                     {{ request()->routeIs('api.index') ? 'bg-indigo-50 text-indigo-700 border-indigo-100 shadow-xs' : 'text-gray-700 hover:bg-gray-100' }}">
                         <span>⚠️ 📡 API Client Laboratory</span>
                     </a>
 
                     <!-- 💵 Currency Exchange Matrix Link -->
-                    <a href="{{ route('api.currency') }}" 
+                    <a href="{{ route('api.currency') }}"
                     class="flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-all border border-transparent
                     {{ request()->routeIs('api.currency') ? 'bg-indigo-50 text-indigo-700 border-indigo-100 shadow-xs' : 'text-gray-700 hover:bg-gray-100' }}">
                         <span>💵 Currency Exchange</span>
                     </a>
 
                     <!-- ✉️ Email Verification Lab Link -->
-                    <a href="{{ route('email.verify.index') }}" 
+                    <a href="{{ route('email.verify.index') }}"
                     class="flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-all border border-transparent
                     {{ request()->routeIs('email.verify.index') ? 'bg-indigo-50 text-indigo-700 border-indigo-100 shadow-xs' : 'text-gray-700 hover:bg-gray-100' }}">
                         <span>⚠️ ✉️ Email Verification</span>
                     </a>
+
+                    <!-- 🎨 Brand New: Profile Card Designer Link -->
+                    <a href="{{ route('profile.designer.index') }}"
+                    class="flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-all border border-transparent
+                    {{ request()->routeIs('profile.designer.index') ? 'bg-indigo-50 text-indigo-700 border-indigo-100 shadow-xs' : 'text-gray-700 hover:bg-gray-100' }}">
+                        <span>🎨</span>
+                        <span>Profile Designer</span>
+                    </a>
+
+
 
                 </nav>
             </div>

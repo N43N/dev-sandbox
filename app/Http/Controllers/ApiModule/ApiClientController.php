@@ -5,6 +5,9 @@ namespace App\Http\Controllers\ApiModule;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Collection;
+
 
 class ApiClientController extends Controller
 {
@@ -219,5 +222,72 @@ public function currencyIndex(Request $request)
         return redirect()->route('email.verify.index')->with('status_success', "Verification complete successfully for: {$email}");
     }
 
+    // 🎨 Profile Designer: Render empty state / default fallback workspace
+    public function profileDesignerIndex()
+    {
+        // Fetch existing state from session, default to layout fallback
+        $profile = session('profile_card_state', [
+            'name' => auth()->user()->name,
+            'title' => 'First Time Learner',
+            'bio' => 'Write a short, engaging description about your core skillsets, developer toolkit, or personal projects here.',
+            'url' => 'https://github.com/N43N',
+            'avatar' => null // Fallback placeholder asset
+        ]);
+
+        return view('modules.api.profile_designer', compact('profile'));
+    }
+
+    // Profile Designer: Extract parameters, process image upload, and sync states
+    public function profileDesignerGenerate(Request $request)
+    {
+        $validated = $request->validate([
+            'name'   => 'required|string|max:50',
+            'title'  => 'required|string|max:60',
+            'bio'    => 'required|string|max:160',
+            'url'    => 'required|url',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048' // Max 2MB configuration
+        ]);
+
+        // Retain old avatar path if no new one is uploaded
+        $currentState = session('profile_card_state', []);
+        $avatarPath = $currentState['avatar'] ?? null;
+
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar file from disk if it exists to save space
+            if ($avatarPath && Storage::disk('public')->exists(str_replace('/storage/', '', $avatarPath))) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $avatarPath));
+            }
+            
+            // Store image natively in public avatars directory
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $avatarPath = Storage::url($path);
+        }
+
+        $profileData = [
+            'name'   => $validated['name'],
+            'title'  => $validated['title'],
+            'bio'    => $validated['bio'],
+            'url'    => $validated['url'],
+            'avatar' => $avatarPath
+        ];
+
+        // Store state systematically in session for global dashboard access
+        session(['profile_card_state' => $profileData]);
+
+        return redirect()->back()->with('status_success', 'Profile Card state synchronized successfully!');
+    }
+        // 📊 Dashboard: Serve the persistent profile card state matrix
+    public function dashboardIndex()
+    {
+        $profile = session('profile_card_state', [
+            'name' => auth()->user()->name,
+            'title' => 'First Time Learner',
+            'bio' => 'Write a short, engaging description about your core skillsets, developer toolkit, or personal projects here.',
+            'url' => 'https://github.com/N43N',
+            'avatar' => null
+        ]);
+
+        return view('dashboard', compact('profile'));
+    }
 
 }
