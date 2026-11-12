@@ -78,7 +78,7 @@
                     <a href="{{ route('email.verify.index') }}"
                     class="flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-all border border-transparent
                     {{ request()->routeIs('email.verify.index') ? 'bg-indigo-50 text-indigo-700 border-indigo-100 shadow-xs' : 'text-gray-700 hover:bg-gray-100' }}">
-                        <span>⚠️ ✉️ Email Verification</span>
+                        <span>✉️ Email Verification</span>
                     </a>
 
                     <!-- 🎨 Brand New: Profile Card Designer Link -->
@@ -88,8 +88,6 @@
                         <span>🎨</span>
                         <span>Profile Designer</span>
                     </a>
-
-
 
                 </nav>
             </div>

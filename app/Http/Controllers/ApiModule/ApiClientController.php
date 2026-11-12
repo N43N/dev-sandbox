@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\ApiModule;
 
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
+use Stevebauman\Location\Facades\Location;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Collection;
 
@@ -13,73 +15,72 @@ class ApiClientController extends Controller
 {
     public function index(Request $request)
     {
-        // 📡 API 1: Fetch randomized advice (FIXED URL path)
-        $advice = 'Keep your code clean, modular, and well-tested.';
-        try {
-            $adviceResponse = Http::timeout(5)->withoutVerifying()->get('https://adviceslip.com');
-            if ($adviceResponse->successful()) {
-                $jsonData = $adviceResponse->json();
-                if (isset($jsonData['slip']['advice'])) {
-                    $advice = $jsonData['slip']['advice'];
-                }
-            }
-        } catch (\Exception $e) {
-            $advice = 'Advice Connection Error: ' . substr($e->getMessage(), 0, 40);
-        }
+        // 1. Detect Location & Coordinates via Stevebauman Location Library
+        $position = Location::get($request->ip());
 
-        // 📡 API 2: Dynamic IP Geolocation Lookup (FIXED json endpoint)
-        $locationName = 'Detecting Location...';
-        $latitude = 2.8125;
-        $longitude = 101.7975;
-
-        try {
-            $geoResponse = Http::timeout(5)->withoutVerifying()->get('https://ipapi.co');
-            if ($geoResponse->successful()) {
-                $geoData = $geoResponse->json();
-                if (!empty($geoData['city'])) {
-                    $locationName = $geoData['city'] . ', ' . ($geoData['country_name'] ?? 'Malaysia');
-                    $latitude = $geoData['latitude'] ?? $latitude;
-                    $longitude = $geoData['longitude'] ?? $longitude;
-                }
-            }
-        } catch (\Exception $e) {
-            $locationName = 'Location Error: ' . substr($e->getMessage(), 0, 30);
-        }
-
-        // 📡 API 3: Weather Forecast Stream (FIXED API Subdomain URL)
-        $weatherData = null;
-        $weatherError = 'Initial connection setup...';
+        $locationName = $position 
+            ? $position->cityName . ', ' . $position->countryName 
+            : 'Nilai, Malaysia';
         
-        try {
-            $weatherResponse = Http::timeout(5)->withoutVerifying()->get('https://open-meteo.com', [
-                'latitude' => $latitude,
-                'longitude' => $longitude,
-                'current' => 'temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m',
-                'timezone' => 'auto'
-            ]);
+        $latitude  = $position ? $position->latitude : 2.8125;
+        $longitude = $position ? $position->longitude : 101.7975;
 
-            if ($weatherResponse->successful()) {
-                $weatherData = $weatherResponse->json()['current'] ?? null;
-            } else {
-                $weatherError = 'Server Status Error Code: ' . $weatherResponse->status();
+        // 2. Fetch Cached Advice Slip
+        $advice = Cache::remember('daily_advice_slip', now()->addMinutes(10), function () {
+            try {
+                $response = Http::timeout(5)->withoutVerifying()->get('https://adviceslip.com');
+                if ($response->successful()) {
+                    return $response->json()['slip']['advice'] ?? 'Keep your code clean, modular, and well-tested.';
+                }
+            } catch (\Exception $e) {
+                return 'Keep your code clean, modular, and well-tested.';
             }
-        } catch (\Exception $e) {
-            $weatherError = 'Connection Bug: ' . substr($e->getMessage(), 0, 60);
+            return 'Keep your code clean, modular, and well-tested.';
+        });
+
+        // 3. Fetch Cached Weather Stream (Matches all 4 Blade fields)
+        $weatherError = null;
+        $cacheKey = 'weather_' . round($latitude, 2) . '_' . round($longitude, 2);
+
+        $weatherData = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($latitude, $longitude, &$weatherError) {
+            try {
+                $response = Http::timeout(5)->withoutVerifying()->get('https://open-meteo.com', [
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
+                    'current' => 'temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m',
+                    'timezone' => 'auto'
+                ]);
+
+                if ($response->successful()) {
+                    return $response->json()['current'] ?? null;
+                }
+                $weatherError = 'Server Status Error Code: ' . $response->status();
+            } catch (\Exception $e) {
+                $weatherError = 'Connection Bug: ' . substr($e->getMessage(), 0, 60);
+            }
+            return null;
+        });
+
+        if (!$weatherData && !$weatherError) {
+            $weatherError = 'Weather telemetry currently unavailable.';
         }
 
         return view('modules.api.index', compact('advice', 'weatherData', 'locationName', 'weatherError'));
     }
 
-       // 🔄 Card Action 1: Isolated Live Advice Stream Fetcher (FIXED HTTPS API Subdomain)
+    // Card Action 1: Isolated Live Advice Stream Fetcher
     public function refreshAdvice()
     {
+        Cache::forget('daily_advice_slip');
         $advice = 'Keep your code clean, modular, and well-tested.';
+
         try {
             $adviceResponse = Http::timeout(4)->withoutVerifying()->get('https://adviceslip.com');
             if ($adviceResponse->successful()) {
                 $jsonData = $adviceResponse->json();
                 if (isset($jsonData['slip']['advice'])) {
                     $advice = $jsonData['slip']['advice'];
+                    Cache::put('daily_advice_slip', $advice, now()->addMinutes(10));
                 }
             }
         } catch (\Exception $e) {
@@ -89,11 +90,13 @@ class ApiClientController extends Controller
         return response()->json(['advice' => $advice]);
     }
 
-    // 🔄 Card Action 2: Isolated Weather Telemetry Array Fetcher (FIXED Full API Route)
+    // Card Action 2: Isolated Weather Telemetry Array Fetcher
     public function refreshWeather(Request $request)
     {
-        $latitude = $request->input('latitude', 2.8125);
-        $longitude = $request->input('longitude', 101.7975);
+        $position = Location::get($request->ip());
+        $latitude  = $request->input('latitude', $position ? $position->latitude : 2.8125);
+        $longitude = $request->input('longitude', $position ? $position->longitude : 101.7975);
+        
         $weatherData = null;
         $weatherError = null;
 
@@ -107,6 +110,10 @@ class ApiClientController extends Controller
 
             if ($weatherResponse->successful()) {
                 $weatherData = $weatherResponse->json()['current'] ?? null;
+                if ($weatherData) {
+                    $cacheKey = 'weather_' . round($latitude, 2) . '_' . round($longitude, 2);
+                    Cache::put($cacheKey, $weatherData, now()->addMinutes(30));
+                }
             } else {
                 $weatherError = 'HTTP Code: ' . $weatherResponse->status();
             }
@@ -120,7 +127,6 @@ class ApiClientController extends Controller
             'weatherError' => $weatherError
         ]);
     }
-
 
     // 💵 API Extension: Live Currency Converter Matrix
 public function currencyIndex(Request $request)

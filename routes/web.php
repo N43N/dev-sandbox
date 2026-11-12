@@ -6,24 +6,12 @@ use App\Http\Controllers\KanbanModule\KanbanController;
 use App\Http\Controllers\ApiModule\ApiClientController;
 use Illuminate\Support\Facades\Route;
 
-
 // ZONE 1: PUBLIC GATEKEEPER PIPELINES
 Route::get('/', function () {
     return view('welcome');
 });
 
-// ZONE 2: CORE AUTHENTICATED CORE INTERFACES
-Route::get('/dashboard', function () {
-    return view('dashboard');
-    })->middleware(['auth', 'verified'])->name('dashboard');
-
-    Route::middleware(['auth', 'verified'])->group(function () {
-
-    // Profile Designer Modules Sandbox Sandbox Engine Routes
-    Route::get('/modules/profile-designer', [ApiClientController::class, 'profileDesignerIndex'])->name('profile.designer.index');
-    Route::post('/modules/profile-designer/generate', [ApiClientController::class, 'profileDesignerGenerate'])->name('profile.designer.generate');
-});
-
+// ZONE 2: CORE AUTHENTICATED INTERFACES
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -32,6 +20,9 @@ Route::middleware('auth')->group(function () {
 
 // ZONE 3: AUTHENTICATED LEARNING MODULES & EXPERIMENTS LAB
 Route::middleware(['auth', 'verified'])->group(function () {
+
+    // 🎛️ Central Dashboard Launchpad
+    Route::get('/dashboard', [ApiClientController::class, 'dashboardIndex'])->name('dashboard');
 
     // 📝 Note Sandbox Module Route Hooks
     Route::get('/modules/notes', [NoteController::class, 'index'])->name('notes.index');
@@ -63,9 +54,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // 🎨 Profile Designer & QR Engine Laboratory
     Route::get('/modules/profile-designer', [ApiClientController::class, 'profileDesignerIndex'])->name('profile.designer.index');
     Route::post('/modules/profile-designer/generate', [ApiClientController::class, 'profileDesignerGenerate'])->name('profile.designer.generate');
-    
-    Route::get('/dashboard', [ApiClientController::class, 'dashboardIndex'])->name('dashboard');
-
 });
 
 // =========================================================================
