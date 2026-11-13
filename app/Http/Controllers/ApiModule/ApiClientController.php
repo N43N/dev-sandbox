@@ -266,7 +266,7 @@ public function currencyIndex(Request $request)
             
             // Store image natively in public avatars directory
             $path = $request->file('avatar')->store('avatars', 'public');
-            $avatarPath = Storage::url($path);
+            $avatarPath = $path; // Stores clean 'avatars/filename.jpg'
         }
 
         $profileData = [

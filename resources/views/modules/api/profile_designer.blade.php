@@ -79,40 +79,6 @@
                     <x-profile_card_canvas :profile="$profile" />
                 </div>
 
-                <!-- THE CANVAS CONTAINER CARD -->
-                <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-6 md:p-8 rounded-3xl border border-slate-700 shadow-xl relative overflow-hidden text-white flex flex-col sm:flex-row gap-6 items-center min-h-[240px]">
-                    <!-- Geometric Visual Accents -->
-                    <div class="absolute right-0 bottom-0 opacity-5 text-[15rem] font-bold transform translate-x-20 translate-y-20 pointer-events-none select-none">ID</div>
-                    <div class="absolute left-1/3 top-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-                    <!-- Left Profile Details Box -->
-                    <div class="flex-1 space-y-4 text-center md:text-left z-10">
-                        <div class="space-y-1.5">
-                            <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest bg-indigo-950/80 border border-indigo-900/60 px-2.5 py-0.5 rounded-full inline-block">Sandbox Identity Matrix</span>
-                            <h2 class="text-2xl font-black tracking-tight text-white mt-1">{{ $profile['name'] }}</h2>
-                            <p class="text-xs font-bold text-slate-300 font-mono tracking-wide">{{ $profile['title'] }}</p>
-                        </div>
-                        
-                        <p class="text-xs text-slate-400 font-medium leading-relaxed max-w-sm">
-                            "{{ $profile['bio'] }}"
-                        </p>
-
-                        <div class="pt-2">
-                            <a href="{{ $profile['url'] }}" target="_blank" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors font-mono underline break-all">
-                                🔗 Open Active Asset Link
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Right QR Code Holder Card Frame (Upgraded to Native JavaScript Engine Canvas) -->
-                    <div class="bg-white/95 border border-white/20 p-3 rounded-2xl shadow-lg flex flex-col items-center justify-center gap-2 z-10 w-[170px] shrink-0 transform hover:scale-105 transition-transform duration-300">
-                        <!-- 🔥 The library renders crisp vector blocks right inside this element box -->
-                        <div id="native-qr-canvas" data-target-url="{{ $profile['url'] }}" class="p-1 bg-white rounded-lg border border-gray-100 [&>img]:mx-auto"></div>
-                        <span class="text-[9px] font-black tracking-wider uppercase text-slate-500 font-mono mt-1">Scan Destination</span>
-                    </div>
-
-                </div>
-
                 <!-- Dashboard Modules Telemetry Navigation Link Helper -->
                 <div class="bg-slate-50 border border-gray-200 rounded-xl p-4 text-[11px] text-gray-500 space-y-1">
                     <span class="font-bold text-gray-700 uppercase block tracking-wider">🔬 Architectural Sandbox Parameters:</span>
