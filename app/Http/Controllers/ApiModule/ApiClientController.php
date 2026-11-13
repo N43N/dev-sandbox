@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Collection;
+use App\Models\Expense;
 
 
 class ApiClientController extends Controller
@@ -18,8 +19,8 @@ class ApiClientController extends Controller
         // 1. Detect Location & Coordinates via Stevebauman Location Library
         $position = Location::get($request->ip());
 
-        $locationName = $position 
-            ? $position->cityName . ', ' . $position->countryName 
+        $locationName = $position
+            ? $position->cityName . ', ' . $position->countryName
             : 'Nilai, Malaysia';
         
         $latitude  = $position ? $position->latitude : 2.8125;
@@ -237,7 +238,7 @@ public function currencyIndex(Request $request)
             'title' => 'First Time Learner',
             'bio' => 'Write a short, engaging description about your core skillsets, developer toolkit, or personal projects here.',
             'url' => 'https://github.com/N43N',
-            'avatar' => null // Fallback placeholder asset
+            'avatar' => null
         ]);
 
         return view('modules.api.profile_designer', compact('profile'));
@@ -292,8 +293,9 @@ public function currencyIndex(Request $request)
             'url' => 'https://github.com/N43N',
             'avatar' => null
         ]);
+        $totalExpense = Expense::where('user_id', auth()->id())->sum('amount');
 
-        return view('dashboard', compact('profile'));
+        return view('dashboard', compact('profile', 'totalExpense'));
     }
 
 }

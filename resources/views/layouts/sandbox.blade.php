@@ -89,6 +89,15 @@
                         <span>Profile Designer</span>
                     </a>
 
+                    <!-- 💰 Expense Analytics Matrix Link -->
+                    <a href="{{ route('expenses.index') }}"
+                    class="flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-all border border-transparent
+                    {{ request()->routeIs('expenses.*') ? 'bg-indigo-50 text-indigo-700 border-indigo-100 shadow-xs' : 'text-gray-700 hover:bg-gray-100' }}">
+                        <span>💰</span>
+                        <span>Expense Analytics</span>
+                    </a>
+
+
                 </nav>
             </div>
         </aside>

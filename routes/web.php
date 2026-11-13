@@ -5,6 +5,8 @@ use App\Http\Controllers\NoteModule\NoteController;
 use App\Http\Controllers\KanbanModule\KanbanController;
 use App\Http\Controllers\ApiModule\ApiClientController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ExpenseModule\ExpenseController;
+
 
 // ZONE 1: PUBLIC GATEKEEPER PIPELINES
 Route::get('/', function () {
@@ -54,7 +56,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // 🎨 Profile Designer & QR Engine Laboratory
     Route::get('/modules/profile-designer', [ApiClientController::class, 'profileDesignerIndex'])->name('profile.designer.index');
     Route::post('/modules/profile-designer/generate', [ApiClientController::class, 'profileDesignerGenerate'])->name('profile.designer.generate');
-});
+
+    // 💰 Personal Expense Tracker & Analytics Chart
+    Route::get('/modules/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+    Route::post('/modules/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+    Route::delete('/modules/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+
+
+
+    });
 
 // =========================================================================
 // ZONE 4: SYSTEM ENGINES
