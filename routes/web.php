@@ -5,8 +5,10 @@ use App\Http\Controllers\NoteModule\NoteController;
 use App\Http\Controllers\KanbanModule\KanbanController;
 use App\Http\Controllers\ApiModule\ApiClientController;
 use App\Http\Controllers\ExpenseModule\ExpenseController;
-use App\Http\Controllers\GisModule\LocationController;
+use App\Http\Controllers\LocationController;
 use Illuminate\Support\Facades\Route;
+
+
 
 
 // ZONE 1: PUBLIC GATEKEEPER PIPELINES

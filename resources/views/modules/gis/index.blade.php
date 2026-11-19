@@ -1,7 +1,7 @@
 @extends('layouts.sandbox')
 
 @section('content')
-<link rel="stylesheet" href="https://unpkg.com" />
+<link rel="stylesheet" href="https://jsdelivr.net" />
 
 <div class="space-y-6">
     {{-- Page Header --}}
@@ -23,12 +23,12 @@
     @endif
 
     {{-- Main 3-Column Grid --}}
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {{-- Left 2 Columns: Interactive Map --}}
-        <div class="xl:col-span-2 space-y-3">
+        <div class="lg:col-span-2 space-y-3">
             <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div id="map" class="h-[480px] w-full z-0"></div>
+                <div id="map" style="height: 480px; width: 100%;" class="z-0"></div>
             </div>
 
             {{-- Simple Legend --}}
@@ -136,59 +136,102 @@
     </div>
 </div>
 
-<script src="https://unpkg.com"></script>
 <script>
+    let map;
     const NILAI_COORDS = [2.8185, 101.7972];
-    const map = L.map('map').setView(NILAI_COORDS, 14);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    const colors = {
-        'Office': '#2563eb',
-        'Landmark': '#059669',
-        'Infrastructure': '#f59e0b',
-        'Client Site': '#9333ea'
-    };
-
-    const locations = @json($locations);
     const markers = {};
     let previewPin = null;
 
-    // Plot saved pins
-    locations.forEach(loc => {
-        const marker = L.circleMarker([loc.latitude, loc.longitude], {
-            radius: 8,
-            fillColor: colors[loc.category] || '#475569',
-            color: '#ffffff',
-            weight: 2,
-            fillOpacity: 0.9
+    window.addEventListener('load', function () {
+        map = L.map('map').setView(NILAI_COORDS, 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        marker.bindPopup(`
-            <b>${loc.title}</b><br>
-            <small>${loc.category}</small><br>
-            <code>${loc.latitude.toFixed(5)}, ${loc.longitude.toFixed(5)}</code>
-            ${loc.notes ? `<p style="margin-top:4px;font-size:12px;">${loc.notes}</p>` : ''}
-        `);
+        const colors = {
+            'Office': '#2563eb',
+            'Landmark': '#059669',
+            'Infrastructure': '#f59e0b',
+            'Client Site': '#9333ea'
+        };
 
-        markers[loc.id] = marker;
+        const locations = @json($locations);
+
+        locations.forEach(loc => {
+            const marker = L.circleMarker([loc.latitude, loc.longitude], {
+                radius: 8,
+                fillColor: colors[loc.category] || '#475569',
+                color: '#ffffff',
+                weight: 2,
+                fillOpacity: 0.9
+            }).addTo(map);
+
+            marker.bindPopup(`
+                <b>${loc.title}</b><br>
+                <small>${loc.category}</small><br>
+                <code>${loc.latitude.toFixed(5)}, ${loc.longitude.toFixed(5)}</code>
+                ${loc.notes ? `<p style="margin-top:4px;font-size:12px;">${loc.notes}</p>` : ''}
+            `);
+
+            markers[loc.id] = marker;
+        });
+
+        // Click map -> capture coordinates + auto-detect building/street name
+        map.on('click', async (e) => {
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+
+            placePreviewPin(lat, lng, 'Detecting place name...');
+
+            try {
+                const res = await fetch(`https://openstreetmap.org{lat}&lon=${lng}`);
+                const data = await res.json();
+                const placeName = data.name || data.address?.building || data.address?.amenity || data.address?.road || 'Pinned Location';
+
+                document.getElementById('title').value = placeName;
+                placePreviewPin(lat, lng, placeName);
+            } catch (err) {
+                placePreviewPin(lat, lng, 'New Pin Preview');
+            }
+        });
     });
 
-    // Click map to capture coordinates
-    map.on('click', (e) => {
-        const lat = e.latlng.lat.toFixed(7);
-        const lng = e.latlng.lng.toFixed(7);
+    // Search place by name -> fly there + fill form
+    async function searchPlace() {
+        const query = document.getElementById('place-search').value.trim();
+        if (!query || !map) return;
 
-        document.getElementById('latitude').value = lat;
-        document.getElementById('longitude').value = lng;
+        const res = await fetch(`https://openstreetmap.org{encodeURIComponent(query)}`);
+        const results = await res.json();
+
+        if (!results.length) {
+            alert('Location not found. Try a broader building or area name.');
+            return;
+        }
+
+        const place = results[0];
+        const lat = parseFloat(place.lat);
+        const lng = parseFloat(place.lon);
+        const shortName = place.display_name.split(',')[0];
+
+        document.getElementById('title').value = shortName;
+        map.flyTo([lat, lng], 16);
+        placePreviewPin(lat, lng, shortName);
+    }
+
+    function placePreviewPin(lat, lng, label) {
+        const fixedLat = Number(lat).toFixed(7);
+        const fixedLng = Number(lng).toFixed(7);
+
+        document.getElementById('latitude').value = fixedLat;
+        document.getElementById('longitude').value = fixedLng;
 
         if (previewPin) {
-            previewPin.setLatLng(e.latlng);
+            previewPin.setLatLng([lat, lng]);
         } else {
-            previewPin = L.circleMarker(e.latlng, {
+            previewPin = L.circleMarker([lat, lng], {
                 radius: 8,
                 fillColor: '#f43f5e',
                 color: '#ffffff',
@@ -197,16 +240,17 @@
             }).addTo(map);
         }
 
-        previewPin.bindPopup(`<b>New Pin Preview</b><br><code>${lat}, ${lng}</code>`).openPopup();
-    });
+        previewPin.bindPopup(`<b>${label}</b><br><code>${fixedLat}, ${fixedLng}</code>`).openPopup();
+    }
 
     function flyToPin(id) {
-        if (!markers[id]) return;
+        if (!map || !markers[id]) return;
         map.flyTo(markers[id].getLatLng(), 16);
         markers[id].openPopup();
     }
 
     function resetMap() {
+        if (!map) return;
         map.flyTo(NILAI_COORDS, 14);
     }
 </script>

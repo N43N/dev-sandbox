@@ -72,7 +72,6 @@
 
     </div>
 
-
     <!-- Active Laboratory Modules Board Grid -->
     <div class="mt-8">
         <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4 flex items-center gap-2">
@@ -154,6 +153,32 @@
                     <a href="{{ route('expenses.index') }}" class="w-full bg-gray-50 hover:bg-rose-600 hover:text-white text-gray-600 font-bold text-[11px] py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5">
                         <span>Enter Laboratory</span>
                         <span>➔</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Module Card 5: Geospatial & Coordinate Pin Sandbox -->
+            <div class="bg-white border border-gray-100 p-6 rounded-2xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between group min-h-[220px]">
+                <div class="space-y-3">
+                    <!-- Top Row: Icon on Left + Live Pin Count Badge on Right -->
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="w-10 h-10 bg-teal-50 border border-teal-100 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition-transform shrink-0">📍</div>
+
+                        <div class="bg-teal-50/80 border border-teal-100 px-3 py-1.5 rounded-xl text-right">
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-teal-500 block leading-none">Saved Pins</span>
+                            <span class="text-xs font-black text-teal-700">{{ auth()->user()->locations()->count() }} {{ Str::plural('Pin', auth()->user()->locations()->count()) }}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-sm">Geospatial Pin Sandbox</h3>
+                        <p class="text-xs text-gray-400 mt-1 leading-relaxed">Interactive Leaflet.js and OpenStreetMap workspace to capture and inspect WGS84 coordinate pins.</p>
+                    </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-gray-50">
+                    <a href="{{ route('gis.index') }}" class="w-full bg-gray-50 hover:bg-teal-600 hover:text-white text-gray-600 font-bold text-[11px] py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5">
+                        <span>Enter Laboratory</span>
+                        <span>&rarr;</span>
                     </a>
                 </div>
             </div>
