@@ -4,8 +4,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NoteModule\NoteController;
 use App\Http\Controllers\KanbanModule\KanbanController;
 use App\Http\Controllers\ApiModule\ApiClientController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ExpenseModule\ExpenseController;
+use App\Http\Controllers\GisModule\LocationController;
+use Illuminate\Support\Facades\Route;
 
 
 // ZONE 1: PUBLIC GATEKEEPER PIPELINES
@@ -62,6 +63,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/modules/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
     Route::delete('/modules/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
 
+    // 📍 Geospatial & Coordinate Pin Sandbox
+    Route::get('/modules/gis', [LocationController::class, 'index'])->name('gis.index');
+    Route::post('/modules/gis', [LocationController::class, 'store'])->name('gis.store');
+    Route::delete('/modules/gis/{location}', [LocationController::class, 'destroy'])->name('gis.destroy');
 
 
     });
