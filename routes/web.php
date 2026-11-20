@@ -8,13 +8,11 @@ use App\Http\Controllers\ExpenseModule\ExpenseController;
 use App\Http\Controllers\LocationController;
 use Illuminate\Support\Facades\Route;
 
-
-
-
 // ZONE 1: PUBLIC GATEKEEPER PIPELINES
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
+
 
 // ZONE 2: CORE AUTHENTICATED INTERFACES
 Route::middleware('auth')->group(function () {

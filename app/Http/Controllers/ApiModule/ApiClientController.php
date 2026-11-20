@@ -229,22 +229,29 @@ public function currencyIndex(Request $request)
         return redirect()->route('email.verify.index')->with('status_success', "Verification complete successfully for: {$email}");
     }
 
-    // 🎨 Profile Designer: Render empty state / default fallback workspace
+    // Helper to build profile array directly from the authenticated User row
+    private function getUserProfileArray(): array
+    {
+        $user = auth()->user();
+
+        return [
+            'name'   => $user->name,
+            'title'  => $user->title ?? 'First Time Learner',
+            'bio'    => $user->bio ?? 'Write a short, engaging description about your core skillsets, developer toolkit, or personal projects here.',
+            'url'    => $user->url ?? 'https://github.com',
+            'avatar' => $user->avatar,
+        ];
+    }
+
+    // Profile Designer: Render saved user profile state
     public function profileDesignerIndex()
     {
-        // Fetch existing state from session, default to layout fallback
-        $profile = session('profile_card_state', [
-            'name' => auth()->user()->name,
-            'title' => 'First Time Learner',
-            'bio' => 'Write a short, engaging description about your core skillsets, developer toolkit, or personal projects here.',
-            'url' => 'https://github.com/N43N',
-            'avatar' => null
-        ]);
+        $profile = $this->getUserProfileArray();
 
         return view('modules.api.profile_designer', compact('profile'));
     }
 
-    // Profile Designer: Extract parameters, process image upload, and sync states
+    // Profile Designer: Validate, store avatar, and persist to users table
     public function profileDesignerGenerate(Request $request)
     {
         $validated = $request->validate([
@@ -252,47 +259,35 @@ public function currencyIndex(Request $request)
             'title'  => 'required|string|max:60',
             'bio'    => 'required|string|max:160',
             'url'    => 'required|url',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048' // Max 2MB configuration
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
-        // Retain old avatar path if no new one is uploaded
-        $currentState = session('profile_card_state', []);
-        $avatarPath = $currentState['avatar'] ?? null;
+        $user = auth()->user();
+        $avatarPath = $user->avatar;
 
         if ($request->hasFile('avatar')) {
-            // Delete old avatar file from disk if it exists to save space
             if ($avatarPath && Storage::disk('public')->exists(str_replace('/storage/', '', $avatarPath))) {
                 Storage::disk('public')->delete(str_replace('/storage/', '', $avatarPath));
             }
-            
-            // Store image natively in public avatars directory
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $avatarPath = $path; // Stores clean 'avatars/filename.jpg'
+
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
         }
 
-        $profileData = [
+        $user->update([
             'name'   => $validated['name'],
             'title'  => $validated['title'],
             'bio'    => $validated['bio'],
             'url'    => $validated['url'],
-            'avatar' => $avatarPath
-        ];
+            'avatar' => $avatarPath,
+        ]);
 
-        // Store state systematically in session for global dashboard access
-        session(['profile_card_state' => $profileData]);
-
-        return redirect()->back()->with('status_success', 'Profile Card state synchronized successfully!');
+        return redirect()->back()->with('status_success', 'Profile Card saved permanently to your account!');
     }
-        // 📊 Dashboard: Serve the persistent profile card state matrix
+
+    // Dashboard: Serve the persistent profile card state from MySQL
     public function dashboardIndex()
     {
-        $profile = session('profile_card_state', [
-            'name' => auth()->user()->name,
-            'title' => 'First Time Learner',
-            'bio' => 'Write a short, engaging description about your core skillsets, developer toolkit, or personal projects here.',
-            'url' => 'https://github.com/N43N',
-            'avatar' => null
-        ]);
+        $profile = $this->getUserProfileArray();
         $totalExpense = Expense::where('user_id', auth()->id())->sum('amount');
 
         return view('dashboard', compact('profile', 'totalExpense'));
