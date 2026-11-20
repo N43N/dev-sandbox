@@ -24,9 +24,20 @@
 
     {{-- Main 3-Column Grid --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
         {{-- Left 2 Columns: Interactive Map --}}
         <div class="lg:col-span-2 space-y-3">
+
+        {{-- Place Search Bar --}}
+        <div class="flex gap-2">
+            <input type="text" id="place-search" placeholder="Search place or building (e.g. MAP2U Sdn Bhd, AEON Mall Nilai)..."
+                onkeydown="if(event.key === 'Enter'){ event.preventDefault(); searchPlace(); }"
+                class="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-xs focus:border-indigo-500 focus:outline-none">
+            <button type="button" onclick="searchPlace()"
+                    class="rounded-lg bg-slate-800 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-700">
+                Search
+            </button>
+        </div>
+
             <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div id="map" style="height: 480px; width: 100%;" class="z-0"></div>
             </div>
@@ -45,6 +56,7 @@
         {{-- Right Column: Form + Saved Pins List --}}
         <div class="space-y-6">
             {{-- Create Pin Form --}}
+
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 class="text-base font-semibold text-slate-900 mb-3">Add Coordinate Pin</h2>
 
@@ -53,9 +65,10 @@
 
                     <div>
                         <label class="block text-xs font-medium text-slate-700 mb-1">Title</label>
-                        <input type="text" name="title" value="{{ old('title') }}" required
-                            placeholder="e.g., MAP2U Survey Point"
+                        <input type="text" id="title" name="title" value="{{ old('title') }}" required
+                            placeholder="Click map or search to auto-fill..."
                             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+
                         @error('title') <p class="text-xs text-rose-600 mt-1">{{ $message }}</p> @enderror
                     </div>
 
@@ -159,6 +172,7 @@
 
         const locations = @json($locations);
 
+        // Plot saved pins with "Open in Google Maps" link
         locations.forEach(loc => {
             const marker = L.circleMarker([loc.latitude, loc.longitude], {
                 radius: 8,
@@ -168,22 +182,34 @@
                 fillOpacity: 0.9
             }).addTo(map);
 
+            const gmapsUrl = `https://google.com{loc.latitude},${loc.longitude}`;
+
             marker.bindPopup(`
                 <b>${loc.title}</b><br>
                 <small>${loc.category}</small><br>
                 <code>${loc.latitude.toFixed(5)}, ${loc.longitude.toFixed(5)}</code>
                 ${loc.notes ? `<p style="margin-top:4px;font-size:12px;">${loc.notes}</p>` : ''}
+                <div style="margin-top:6px;">
+                    <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer"
+                        style="color:#2563eb;font-size:11px;font-weight:600;text-decoration:underline;">
+                        Open in Google Maps &nearr;
+                    </a>
+                </div>
             `);
 
             markers[loc.id] = marker;
         });
 
         // Click map -> capture coordinates + auto-detect building/street name
-        map.on('click', async (e) => {
-            const lat = e.latlng.lat;
-            const lng = e.latlng.lng;
+        map.on('click', async function (e) {
+            const lat = e.latlng.lat.toFixed(7);
+            const lng = e.latlng.lng.toFixed(7);
 
-            placePreviewPin(lat, lng, 'Detecting place name...');
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+            document.getElementById('title').value = 'Detecting place name...';
+
+            updatePreviewPin(e.latlng, 'Detecting place...');
 
             try {
                 const res = await fetch(`https://openstreetmap.org{lat}&lon=${lng}`);
@@ -191,42 +217,46 @@
                 const placeName = data.name || data.address?.building || data.address?.amenity || data.address?.road || 'Pinned Location';
 
                 document.getElementById('title').value = placeName;
-                placePreviewPin(lat, lng, placeName);
+                updatePreviewPin(e.latlng, placeName);
             } catch (err) {
-                placePreviewPin(lat, lng, 'New Pin Preview');
+                document.getElementById('title').value = 'Pinned Location';
+                updatePreviewPin(e.latlng, 'New Pin Preview');
             }
         });
     });
 
-    // Search place by name -> fly there + fill form
     async function searchPlace() {
         const query = document.getElementById('place-search').value.trim();
         if (!query || !map) return;
 
-        const res = await fetch(`https://openstreetmap.org{encodeURIComponent(query)}`);
-        const results = await res.json();
+        try {
+            const res = await fetch(`https://openstreetmap.org{encodeURIComponent(query)}`);
+            const results = await res.json();
 
-        if (!results.length) {
-            alert('Location not found. Try a broader building or area name.');
-            return;
+            if (!results.length) {
+                alert('Location not found. Try a broader building or area name.');
+                return;
+            }
+
+            const place = results;
+            const lat = parseFloat(place.lat);
+            const lng = parseFloat(place.lon);
+            const shortName = place.display_name.split(',');
+
+            document.getElementById('title').value = shortName;
+            document.getElementById('latitude').value = lat.toFixed(7);
+            document.getElementById('longitude').value = lng.toFixed(7);
+
+            map.flyTo([lat, lng], 16);
+            updatePreviewPin([lat, lng], shortName);
+        } catch (err) {
+            alert('Search failed. Please check your internet connection.');
         }
-
-        const place = results[0];
-        const lat = parseFloat(place.lat);
-        const lng = parseFloat(place.lon);
-        const shortName = place.display_name.split(',')[0];
-
-        document.getElementById('title').value = shortName;
-        map.flyTo([lat, lng], 16);
-        placePreviewPin(lat, lng, shortName);
     }
 
-    function placePreviewPin(lat, lng, label) {
-        const fixedLat = Number(lat).toFixed(7);
-        const fixedLng = Number(lng).toFixed(7);
-
-        document.getElementById('latitude').value = fixedLat;
-        document.getElementById('longitude').value = fixedLng;
+    function updatePreviewPin(latlng, label) {
+        const lat = Array.isArray(latlng) ? latlng : latlng.lat;
+        const lng = Array.isArray(latlng) ? latlng : latlng.lng;
 
         if (previewPin) {
             previewPin.setLatLng([lat, lng]);
@@ -240,7 +270,7 @@
             }).addTo(map);
         }
 
-        previewPin.bindPopup(`<b>${label}</b><br><code>${fixedLat}, ${fixedLng}</code>`).openPopup();
+        previewPin.bindPopup(`<b>${label}</b><br><code>${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}</code>`).openPopup();
     }
 
     function flyToPin(id) {
