@@ -62,6 +62,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
     Route::post('/modules/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
     Route::delete('/modules/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+    Route::get('/modules/expenses/export', [ExpenseController::class, 'exportCsv'])->name('expenses.export');
+
 
     // 📍 Geospatial & Coordinate Pin Sandbox
     Route::get('/modules/gis', [LocationController::class, 'index'])->name('gis.index');

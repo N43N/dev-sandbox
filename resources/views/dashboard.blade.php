@@ -188,15 +188,50 @@
 
     <!-- Live Active Micro Preview Panel Zone Layout -->
     <div class="mt-8">
-
-        <!-- Left/Center Multi-Span Column Container -->
-        <div class="lg:col-span-2 bg-white border border-gray-100 p-6 rounded-2xl shadow-sm">
-            <h3 class="font-bold text-slate-800 text-base">Workspace Statistics Summary</h3>
-            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Your isolated testing arrays are executing with 100% processing runtime efficiency metrics.</p>
-            <div class="mt-4 h-32 bg-slate-50 border border-dashed border-slate-200 rounded-xl flex items-center justify-center text-xs text-slate-400">
-                Data charts pipeline placeholder
+        <div class="bg-white border border-gray-100 p-6 rounded-2xl shadow-xs">
+            <div class="flex items-center justify-between gap-4 border-b border-gray-100 pb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-base">Recent Workspace Activity</h3>
+                    <p class="text-xs text-slate-400 mt-1">Latest saved records across your Notes, Kanban, Expense, and Geospatial modules.</p>
+                </div>
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-600">
+                    {{ $recentActivities->count() }} Latest
+                </span>
             </div>
-        </div>
 
+            @if ($recentActivities->isEmpty())
+                <div class="mt-4 h-28 bg-slate-50 border border-dashed border-slate-200 rounded-xl flex items-center justify-center text-xs text-slate-400">
+                    No recent activity yet. Create a note, task, expense, or map pin to see live updates here.
+                </div>
+            @else
+                <div class="mt-4 divide-y divide-gray-100">
+                    @foreach ($recentActivities as $activity)
+                        <a href="{{ $activity['url'] }}"
+                            class="flex items-center justify-between gap-4 py-3 px-2 rounded-xl hover:bg-slate-50 transition-colors group">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="w-9 h-9 rounded-xl bg-slate-50 border border-gray-100 flex items-center justify-center text-base shrink-0">
+                                    {{ $activity['icon'] }}
+                                </span>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border {{ $activity['badge'] }}">
+                                            {{ $activity['module'] }}
+                                        </span>
+                                        <p class="text-sm font-semibold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
+                                            {{ $activity['title'] }}
+                                        </p>
+                                    </div>
+                                    <p class="text-xs text-slate-400 mt-0.5 truncate">{{ $activity['meta'] }}</p>
+                                </div>
+                            </div>
+
+                            <span class="text-[11px] font-medium text-slate-400 shrink-0">
+                                {{ $activity['time']?->diffForHumans() }}
+                            </span>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+        </div>
     </div>
 @endsection

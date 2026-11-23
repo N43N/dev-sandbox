@@ -99,11 +99,11 @@
 
                     <!-- 📍 Geospatial Link -->
                     <a href="{{ route('gis.index') }}"
-                    class="flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-all border border-transparent
-                    {{ request()->routeIs('expenses.*') ? 'bg-indigo-50 text-indigo-700 border-indigo-100 shadow-xs' : 'text-gray-700 hover:bg-gray-100' }}">
+                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors {{ request()->routeIs('gis.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                         <span>📍</span>
                         <span>Geospatial</span>
                     </a>
+
 
                 </nav>
             </div>

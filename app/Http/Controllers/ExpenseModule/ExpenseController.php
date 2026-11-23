@@ -67,4 +67,36 @@ class ExpenseController extends Controller
 
         return back()->with('status_success', 'Expense entry deleted.');
     }
+
+        public function exportCsv()
+    {
+        $expenses = Expense::where('user_id', auth()->id())
+            ->orderByDesc('spent_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $headers = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="expenses-' . now()->format('Y-m-d') . '.csv"',
+        ];
+
+        $callback = function () use ($expenses) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Date', 'Title', 'Category', 'Amount (RM)']);
+
+            foreach ($expenses as $expense) {
+                fputcsv($file, [
+                    $expense->spent_at,
+                    $expense->title,
+                    $expense->category,
+                    number_format((float) $expense->amount, 2, '.', ''),
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
 }

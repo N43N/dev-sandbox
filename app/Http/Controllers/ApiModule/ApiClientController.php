@@ -10,7 +10,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Collection;
 use App\Models\Expense;
-
+use App\Models\Location as LocationPin;
+use App\Models\Note;
+use App\Models\Task;
 
 class ApiClientController extends Controller
 {
@@ -22,7 +24,6 @@ class ApiClientController extends Controller
         $locationName = $position
             ? $position->cityName . ', ' . $position->countryName
             : 'Nilai, Malaysia';
-        
         $latitude  = $position ? $position->latitude : 2.8125;
         $longitude = $position ? $position->longitude : 101.7975;
 
@@ -284,13 +285,63 @@ public function currencyIndex(Request $request)
         return redirect()->back()->with('status_success', 'Profile Card saved permanently to your account!');
     }
 
-    // Dashboard: Serve the persistent profile card state from MySQL
+    // Dashboard: Serve persistent profile, total expense, and unified recent activity feed
     public function dashboardIndex()
     {
+        $userId = auth()->id();
         $profile = $this->getUserProfileArray();
-        $totalExpense = Expense::where('user_id', auth()->id())->sum('amount');
+        $totalExpense = Expense::where('user_id', $userId)->sum('amount');
 
-        return view('dashboard', compact('profile', 'totalExpense'));
+        $notes = Note::where('user_id', $userId)->latest()->take(2)->get()->map(fn ($item) => [
+            'module' => 'Notepad',
+            'badge'  => 'bg-indigo-50 text-indigo-600 border-indigo-100',
+            'icon'   => '📝',
+            'title'  => $item->title ?? 'Untitled Note',
+            'meta'   => 'Saved markdown document',
+            'url'    => route('notes.index'),
+            'time'   => $item->updated_at ?? $item->created_at,
+        ]);
+
+        $tasks = Task::where('user_id', $userId)->latest()->take(2)->get()->map(fn ($item) => [
+            'module' => 'Kanban',
+            'badge'  => 'bg-purple-50 text-purple-600 border-purple-100',
+            'icon'   => '📋',
+            'title'  => $item->title ?? $item->name ?? 'Kanban Task',
+            'meta'   => 'Status: ' . ucfirst(str_replace('_', ' ', $item->status ?? 'Active')),
+            'url'    => route('kanban.index'),
+            'time'   => $item->updated_at ?? $item->created_at,
+        ]);
+
+        $expenses = Expense::where('user_id', $userId)->latest()->take(2)->get()->map(fn ($item) => [
+            'module' => 'Expense',
+            'badge'  => 'bg-rose-50 text-rose-600 border-rose-100',
+            'icon'   => '💰',
+            'title'  => $item->title ?? $item->description ?? 'Expense Entry',
+            'meta'   => 'RM ' . number_format((float) $item->amount, 2),
+            'url'    => route('expenses.index'),
+            'time'   => $item->created_at,
+        ]);
+
+        $locations = LocationPin::where('user_id', $userId)->latest()->take(2)->get()->map(fn ($item) => [
+            'module' => 'Geospatial',
+            'badge'  => 'bg-teal-50 text-teal-600 border-teal-100',
+            'icon'   => '📍',
+            'title'  => $item->title,
+            'meta'   => $item->category . ' (' . number_format($item->latitude, 4) . ', ' . number_format($item->longitude, 4) . ')',
+            'url'    => route('gis.index'),
+            'time'   => $item->created_at,
+        ]);
+
+        $recentActivities = collect()
+            ->merge($notes)
+            ->merge($tasks)
+            ->merge($expenses)
+            ->merge($locations)
+            ->sortByDesc('time')
+            ->take(6)
+            ->values();
+
+        return view('dashboard', compact('profile', 'totalExpense', 'recentActivities'));
     }
 
 }
