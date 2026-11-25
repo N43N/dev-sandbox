@@ -31,6 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/notes', [NoteController::class, 'index'])->name('notes.index');
     Route::post('/modules/notes', [NoteController::class, 'store'])->name('notes.store');
     Route::delete('/modules/notes/{note}', [NoteController::class, 'destroy'])->name('notes.destroy');
+    Route::get('/modules/notes/{note}/export', [NoteController::class, 'exportMarkdown'])->name('notes.export');
 
     // 📋 Kanban Board Sandbox Module Route Hooks
     Route::get('/modules/kanban', [KanbanController::class, 'index'])->name('kanban.index');
@@ -63,7 +64,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/modules/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
     Route::delete('/modules/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
     Route::get('/modules/expenses/export', [ExpenseController::class, 'exportCsv'])->name('expenses.export');
-
 
     // 📍 Geospatial & Coordinate Pin Sandbox
     Route::get('/modules/gis', [LocationController::class, 'index'])->name('gis.index');

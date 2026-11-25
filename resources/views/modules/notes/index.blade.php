@@ -82,9 +82,15 @@
                                 </div>
                             </div>
 
-                            <div class="border-t border-gray-100 pt-3 mt-4 flex justify-between items-center text-[11px] text-gray-400">
-                                <span>Saved: {{ $note->created_at->diffForHumans() }}</span>
-                                
+                        <div class="border-t border-gray-100 pt-3 mt-4 flex justify-between items-center text-[11px] text-gray-400">
+                            <span>Saved: {{ $note->created_at->diffForHumans() }}</span>
+
+                            <div class="flex items-center gap-3">
+                                <a href="{{ route('notes.export', $note->id) }}"
+                                    class="text-indigo-600 hover:text-indigo-800 font-semibold hover:underline">
+                                    Download .md
+                                </a>
+
                                 <form action="{{ route('notes.destroy', $note->id) }}" method="POST" onsubmit="return confirm('Purge this experimental note record?');">
                                     @csrf
                                     @method('DELETE')
@@ -94,6 +100,7 @@
                                 </form>
                             </div>
                         </div>
+
                     @endforeach
                 </div>
             @endif
