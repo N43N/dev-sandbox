@@ -55,6 +55,7 @@
                                     <option value="Tech & Software">💻 Tech & Software</option>
                                     <option value="Bills & Utilities">⚡ Bills & Utilities</option>
                                     <option value="Entertainment">🎮 Entertainment</option>
+                                    <option value="Others">Others</option>
                                 </select>
                             </div>
                             <div>
@@ -123,7 +124,7 @@
 
         <!-- Chart.js CDN & Blade Data Injection -->
     @if($expenses->count() > 0)
-    <script src="https://jsdelivr.net"></script>
+    <script src="https://cdn.sdelivr.net/npm/chart.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 const ctx = document.getElementById('expenseDoughnutChart').getContext('2d');
