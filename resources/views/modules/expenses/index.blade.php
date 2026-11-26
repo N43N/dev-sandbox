@@ -5,24 +5,26 @@
 @section('content')
         <div class="max-w-6xl mx-auto space-y-6 p-2">
             
-            <!-- Header -->
-            <div class="border-b border-gray-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">💰 Expense Tracker & Analytics Chart</h1>
-                    <p class="text-sm text-gray-500 mt-0.5">Eloquent SQL aggregation (GROUP BY & SUM) piped directly into Chart.js.</p>
-                </div>
-        
-                <div class="flex flex-wrap items-center gap-3">
-            <a href="{{ route('expenses.export') }}"
-                class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 transition">
-                <span>Export CSV</span>
-                <span>&darr;</span>
-            </a>
-
-            <div class="bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-xl text-right">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-500 block">Total Logged Spending</span>
-                <span class="text-xl font-black text-indigo-900">RM {{ number_format($totalSpent, 2) }}</span>
+        <!-- Header -->
+        <div class="border-b border-gray-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">💰 Expense Tracker & Analytics Chart</h1>
+                <p class="text-sm text-gray-500 mt-0.5">Eloquent SQL aggregation (GROUP BY & SUM) piped directly into Chart.js.</p>
             </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="{{ route('expenses.export') }}"
+                    class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 transition">
+                    <span>Export CSV</span>
+                    <span>&darr;</span>
+                </a>
+
+                <div class="bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-xl text-right">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-500 block">Total Logged Spending</span>
+                    <span class="text-xl font-black text-indigo-900">RM {{ number_format($totalSpent, 2) }}</span>
+                </div>
+            </div>
+        </div>
 
 
             <!-- Flash Message -->
