@@ -124,7 +124,7 @@
 
         <!-- Chart.js CDN & Blade Data Injection -->
     @if($expenses->count() > 0)
-    <script src="https://cdn.sdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 const ctx = document.getElementById('expenseDoughnutChart').getContext('2d');
