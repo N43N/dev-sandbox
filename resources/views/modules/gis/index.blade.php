@@ -5,21 +5,21 @@
 
 <div class="space-y-6">
     {{-- Page Header --}}
-    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
-        <div>
-            <h1 class="text-2xl font-bold text-slate-900">Geospatial & Coordinate Pin Sandbox</h1>
-            <p class="text-sm text-slate-500">Click anywhere on the map to capture coordinates and save pins.</p>
-        </div>
-        <div class="flex items-center gap-2">
-        <button type="button" onclick="exportGeoJSON()"
-                class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500">
-            Export GeoJSON
-        </button>
-        <button type="button" onclick="resetMap()"
-                class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
-            Center on Nilai
-        </button>
-    </div>
+<div class="flex flex-wrap items-center gap-2">
+    <input type="file" id="geojson-upload" accept=".geojson,.json" class="hidden" onchange="importGeoJSON(event)">
+    <button type="button" onclick="document.getElementById('geojson-upload').click()"
+            class="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">
+        Import GeoJSON
+    </button>
+    <button type="button" onclick="exportGeoJSON()"
+            class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500">
+        Export GeoJSON
+    </button>
+    <button type="button" onclick="resetMap()"
+            class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+        Center on Nilai
+    </button>
+</div>
 
     @if (session('status'))
         <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
@@ -163,9 +163,20 @@
     window.addEventListener('load', function () {
         map = L.map('map').setView(NILAI_COORDS, 14);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const esriBase = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/';
+        const satelliteLayer = L.tileLayer(esriBase + '{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri'
+        });
+
+        L.control.layers({
+            'Street Map': streetLayer,
+            'Satellite View': satelliteLayer
         }).addTo(map);
 
         const colors = {
@@ -187,7 +198,8 @@
                 fillOpacity: 0.9
             }).addTo(map);
 
-            const gmapsUrl = `https://google.com{loc.latitude},${loc.longitude}`;
+            const gmapsBase = 'https://google.com/maps/search/?api=1&query=';
+            const gmapsUrl = gmapsBase + loc.latitude + ',' + loc.longitude;
 
             marker.bindPopup(`
                 <b>${loc.title}</b><br>
@@ -208,7 +220,7 @@
         // Click map -> capture coordinates + auto-detect building/street name
         map.on('click', async function (e) {
             const lat = e.latlng.lat.toFixed(7);
-            const lng = e.latlng.lng.toFixed(7);
+            const res = await fetch(`https://openstreetmap.org{lat}&lon=${lng}`);
 
             document.getElementById('latitude').value = lat;
             document.getElementById('longitude').value = lng;
@@ -321,6 +333,48 @@
         link.download = 'nilai-pins.geojson';
         link.click();
         URL.revokeObjectURL(url);
+    }
+
+    let importedLayer = null;
+
+    function importGeoJSON(event) {
+        const file = event.target.files[0];
+        if (!file || !map) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            try {
+                const geojsonData = JSON.parse(e.target.result);
+
+                if (importedLayer) {
+                    map.removeLayer(importedLayer);
+                }
+
+                importedLayer = L.geoJSON(geojsonData, {
+                    pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
+                        radius: 8,
+                        fillColor: '#06b6d4',
+                        color: '#ffffff',
+                        weight: 2,
+                        fillOpacity: 0.9
+                    }),
+                    onEachFeature: (feature, layer) => {
+                        const props = feature.properties || {};
+                        const name = props.title || props.name || 'Imported Feature';
+                        const cat = props.category || 'GeoJSON Layer';
+                        layer.bindPopup(`<b>${name}</b><br><small>${cat}</small>`);
+                    }
+                }).addTo(map);
+
+                if (importedLayer.getBounds().isValid()) {
+                    map.fitBounds(importedLayer.getBounds().pad(0.2));
+                }
+            } catch (err) {
+                alert('Invalid GeoJSON file. Please upload a valid .geojson or .json file.');
+            }
+            event.target.value = '';
+        };
+        reader.readAsText(file);
     }
     
 </script>
