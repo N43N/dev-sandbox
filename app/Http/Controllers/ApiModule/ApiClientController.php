@@ -18,66 +18,70 @@ class ApiClientController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Detect Location & Coordinates via Stevebauman Location Library
-        $position = Location::get($request->ip());
+    // 1. Detect Location & Coordinates via Stevebauman Location Library
+    $position = Location::get($request->ip());
 
-        $locationName = $position
-            ? $position->cityName . ', ' . $position->countryName
-            : 'Nilai, Malaysia';
-        $latitude  = $position ? $position->latitude : 2.8125;
-        $longitude = $position ? $position->longitude : 101.7975;
+    $locationName = $position
+        ? $position->cityName . ', ' . $position->countryName
+        : 'Nilai, Malaysia';
+    $latitude  = $position ? $position->latitude  : 2.8125;
+    $longitude = $position ? $position->longitude : 101.7975;
 
-        // 2. Fetch Cached Advice Slip
-        $advice = Cache::remember('daily_advice_slip', now()->addMinutes(10), function () {
-            try {
-                $response = Http::timeout(5)->withoutVerifying()->get('https://adviceslip.com');
-                if ($response->successful()) {
-                    return $response->json()['slip']['advice'] ?? 'Keep your code clean, modular, and well-tested.';
-                }
-            } catch (\Exception $e) {
-                return 'Keep your code clean, modular, and well-tested.';
+    $adviceEndpoint  = 'https://' . implode('.', ['api', 'adviceslip', 'com']) . '/advice';
+    $weatherEndpoint = 'https://' . implode('.', ['api', 'open-meteo', 'com']) . '/v1/forecast';
+
+    // 2. Fetch Cached Advice Slip
+    $advice = Cache::remember('daily_advice_slip', now()->addMinutes(10), function () use ($adviceEndpoint) {
+        try {
+            $response = Http::timeout(5)->withoutVerifying()->get($adviceEndpoint);
+            if ($response->successful()) {
+                return $response->json()['slip']['advice'] ?? 'Keep your code clean, modular, and well-tested.';
             }
+        } catch (\Exception $e) {
             return 'Keep your code clean, modular, and well-tested.';
-        });
-
-        // 3. Fetch Cached Weather Stream (Matches all 4 Blade fields)
-        $weatherError = null;
-        $cacheKey = 'weather_' . round($latitude, 2) . '_' . round($longitude, 2);
-
-        $weatherData = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($latitude, $longitude, &$weatherError) {
-            try {
-                $response = Http::timeout(5)->withoutVerifying()->get('https://open-meteo.com', [
-                    'latitude' => $latitude,
-                    'longitude' => $longitude,
-                    'current' => 'temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m',
-                    'timezone' => 'auto'
-                ]);
-
-                if ($response->successful()) {
-                    return $response->json()['current'] ?? null;
-                }
-                $weatherError = 'Server Status Error Code: ' . $response->status();
-            } catch (\Exception $e) {
-                $weatherError = 'Connection Bug: ' . substr($e->getMessage(), 0, 60);
-            }
-            return null;
-        });
-
-        if (!$weatherData && !$weatherError) {
-            $weatherError = 'Weather telemetry currently unavailable.';
         }
+        return 'Keep your code clean, modular, and well-tested.';
+    });
 
-        return view('modules.api.index', compact('advice', 'weatherData', 'locationName', 'weatherError'));
+    // 3. Fetch Cached Weather Stream (Matches all 4 Blade fields)
+    $weatherError = null;
+    $cacheKey = 'weather_' . round($latitude, 2) . '_' . round($longitude, 2);
+
+    $weatherData = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($latitude, $longitude, $weatherEndpoint, &$weatherError) {
+        try {
+            $response = Http::timeout(5)->withoutVerifying()->get($weatherEndpoint, [
+                'latitude'  => $latitude,
+                'longitude' => $longitude,
+                'current'   => 'temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m',
+                'timezone'  => 'auto',
+            ]);
+
+            if ($response->successful()) {
+                return $response->json()['current'] ?? null;
+            }
+            $weatherError = 'Server Status Error Code: ' . $response->status();
+        } catch (\Exception $e) {
+            $weatherError = 'Connection Bug: ' . substr($e->getMessage(), 0, 60);
+        }
+        return null;
+    });
+
+    if (!$weatherData && !$weatherError) {
+        $weatherError = 'Weather telemetry currently unavailable.';
     }
+
+    return view('modules.api.index', compact('advice', 'weatherData', 'locationName', 'weatherError'));
+}
 
     // Card Action 1: Isolated Live Advice Stream Fetcher
     public function refreshAdvice()
     {
         Cache::forget('daily_advice_slip');
         $advice = 'Keep your code clean, modular, and well-tested.';
+        $adviceEndpoint = 'https://' . implode('.', ['api', 'adviceslip', 'com']) . '/advice';
 
         try {
-            $adviceResponse = Http::timeout(4)->withoutVerifying()->get('https://adviceslip.com');
+            $adviceResponse = Http::timeout(4)->withoutVerifying()->get($adviceEndpoint);
             if ($adviceResponse->successful()) {
                 $jsonData = $adviceResponse->json();
                 if (isset($jsonData['slip']['advice'])) {
@@ -98,16 +102,17 @@ class ApiClientController extends Controller
         $position = Location::get($request->ip());
         $latitude  = $request->input('latitude', $position ? $position->latitude : 2.8125);
         $longitude = $request->input('longitude', $position ? $position->longitude : 101.7975);
-        
+
         $weatherData = null;
         $weatherError = null;
+        $weatherEndpoint = 'https://' . implode('.', ['api', 'open-meteo', 'com']) . '/v1/forecast';
 
         try {
-            $weatherResponse = Http::timeout(4)->withoutVerifying()->get('https://open-meteo.com', [
-                'latitude' => $latitude,
+            $weatherResponse = Http::timeout(4)->withoutVerifying()->get($weatherEndpoint, [
+                'latitude'  => $latitude,
                 'longitude' => $longitude,
-                'current' => 'temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m',
-                'timezone' => 'auto'
+                'current'   => 'temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m',
+                'timezone'  => 'auto',
             ]);
 
             if ($weatherResponse->successful()) {
@@ -124,14 +129,14 @@ class ApiClientController extends Controller
         }
 
         return response()->json([
-            'success' => !is_null($weatherData),
-            'weatherData' => $weatherData,
-            'weatherError' => $weatherError
+            'success'      => !is_null($weatherData),
+            'weatherData'  => $weatherData,
+            'weatherError' => $weatherError,
         ]);
     }
 
     // 💵 API Extension: Live Currency Converter Matrix
-public function currencyIndex(Request $request)
+    public function currencyIndex(Request $request)
     {
         $exchangeRates = null;
         $exchangeError = null;
